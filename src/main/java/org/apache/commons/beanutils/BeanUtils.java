@@ -18,6 +18,8 @@
 
 package org.apache.commons.beanutils;
 
+import org.apache.commons.beanutils.annotations.AnnotationProvider;
+
 import java.lang.reflect.InvocationTargetException;
 import java.util.Map;
 
@@ -35,7 +37,13 @@ import java.util.Map;
  */
 
 public class BeanUtils {
+    public static boolean isAutoAnnotation() {
+        return AnnotationProvider.getInstance().isAutoAnnotationMode();
+    }
 
+    public static void setAutoAnnotation(boolean autoAnnotation) {
+        AnnotationProvider.getInstance().setAutoAnnotationMode(autoAnnotation);
+    }
 
     // ------------------------------------------------------ Private Variables
 

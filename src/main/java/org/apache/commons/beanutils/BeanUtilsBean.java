@@ -30,6 +30,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.beanutils.annotations.Alias;
+import org.apache.commons.beanutils.annotations.AnnotationProvider;
 import org.apache.commons.beanutils.expression.Resolver;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -49,7 +51,6 @@ import org.apache.commons.logging.LogFactory;
  */
 
 public class BeanUtilsBean {
-
 
     // ------------------------------------------------------ Private Class Variables
 
@@ -271,19 +272,37 @@ public class BeanUtilsBean {
         } else /* if (orig is a standard JavaBean) */ {
             final PropertyDescriptor[] origDescriptors =
                 getPropertyUtils().getPropertyDescriptors(orig);
+            AnnotationProvider provider = AnnotationProvider.getInstance();
+            boolean isAutoAnnotation =  provider.isAutoAnnotationMode();
+            Class origClazz = orig.getClass();
             for (int i = 0; i < origDescriptors.length; i++) {
                 final String name = origDescriptors[i].getName();
                 if ("class".equals(name)) {
                     continue; // No point in trying to set an object's class
                 }
-                if (getPropertyUtils().isReadable(orig, name) &&
-                    getPropertyUtils().isWriteable(dest, name)) {
+                if (getPropertyUtils().isReadable(orig, name)) {
                     try {
-                        final Object value =
-                            getPropertyUtils().getSimpleProperty(orig, name);
-                        copyProperty(dest, name, value);
+                        final Object value =  getPropertyUtils().getSimpleProperty(orig, name);
+
+                        if(!isAutoAnnotation){
+                            if(getPropertyUtils().isWriteable(dest, name)) {
+                                copyProperty(dest, name, value);
+                            }
+                        }else{
+                            Object object = provider.getAnnotation(origClazz.getDeclaredField(name), Alias.class);
+                            if(null==object&&getPropertyUtils().isWriteable(dest, name)){
+                                copyProperty(dest, name, value);
+                            }else{
+                                final String aliasName =  ((Alias) object).value();
+                                if(object instanceof  Alias && getPropertyUtils().isWriteable(dest, aliasName)){
+                                    copyProperty(dest, aliasName, value);
+                                }
+                            }
+                        }
                     } catch (final NoSuchMethodException e) {
                         // Should not happen
+                    }catch (NoSuchFieldException ex){
+                        // Should not happen,either
                     }
                 }
             }
